@@ -25,6 +25,8 @@ public class VoteBot extends ListenerAdapter{
 	
 	public static final String votesPath = "votes.txt";
 	public static final String top50Path = "top50.txt";
+	
+	public static final int MAX_LIST_LENGTH = 15;
 
 	public static File votesTxt;
 	public static String threadURL;
@@ -86,12 +88,12 @@ public class VoteBot extends ListenerAdapter{
 				if(message.split(" ").length > 1 && message.split(";+").length > 1){ // if ?vote has players parameter
 					
 					message = message.substring(6); // remove "?vote ", old .split(" ")[1] method didn't work out
-					String[] votedFor = message.toLowerCase().replace(' ', '_').split(";+", 11);	// max limit of 11
+					String[] votedFor = message.toLowerCase().replace(' ', '_').split(";+", MAX_LIST_LENGTH + 1);
 					
 					//	cut away
-					if(votedFor.length == 11){
-						String[] tempArray = new String[10];
-						System.arraycopy(votedFor, 0, tempArray, 0, 10);
+					if(votedFor.length == MAX_LIST_LENGTH + 1){
+						String[] tempArray = new String[MAX_LIST_LENGTH];
+						System.arraycopy(votedFor, 0, tempArray, 0, MAX_LIST_LENGTH);
 						
 						votedFor = tempArray;
 					}
@@ -106,7 +108,7 @@ public class VoteBot extends ListenerAdapter{
 					////////////////////////////////////////////////////////////////// check for errors
 										
 					for(int i = 0; i < votedFor.length; i++){
-						if(i >= 10 || votedFor[i].equals(""))
+						if(i >= MAX_LIST_LENGTH || votedFor[i].equals(""))
 							break;
 						
 						if(top50.contains(votedFor[i].trim()))
@@ -120,7 +122,7 @@ public class VoteBot extends ListenerAdapter{
 						}
 						
 						for(int j = i + 1; j < votedFor.length; j++){
-							if(j >= 10)
+							if(j >= MAX_LIST_LENGTH)
 								continue;
 							
 							if(votedFor[i].equalsIgnoreCase(votedFor[j])){
@@ -137,35 +139,35 @@ public class VoteBot extends ListenerAdapter{
 					if(notFoundError){
 						// construct reply string containing users that weren't found
 						int count = 0;
-						StringBuilder wrongIndexes = new StringBuilder();
+						StringBuilder wrongIndexesSB = new StringBuilder();
 						
 						for(int i = 0; i < foundInTop50Indexes.length; i++){
 							if(!foundInTop50Indexes[i]){
-								wrongIndexes.append("#" + (i + 1) + ", ");
+								wrongIndexesSB.append("#" + (i + 1) + ", ");
 								count++;
 							}
 						}
-						wrongIndexes = wrongIndexes.delete(wrongIndexes.length() - 2, wrongIndexes.length()); // cut away final ", "
+						wrongIndexesSB = wrongIndexesSB.delete(wrongIndexesSB.length() - 2, wrongIndexesSB.length()); // cut away final ", "
 						
-						reply = String.format("user%s at %s %s not found in the top 50. vote discarded - %s", 
-								(count != 1 ? "s" : ""), wrongIndexes, (count != 1 ? "were" : "was"), defaultFeedback);
+						reply = String.format("user%s at %s %s not found in the top 50. %s", 
+								(count != 1 ? "s" : ""), wrongIndexesSB, (count != 1 ? "were" : "was"), defaultFeedback);
 					}
 					else if(votedForYourselfError){
 						reply = "you put yourself at #" + (votedForYourselfIndex + 1) + ". " + defaultFeedback;
 					}
 					else if(duplicateVoteError){
 						// construct reply string containing indexes for duplicate users
-						StringBuilder duplicateIndexes = new StringBuilder();
+						StringBuilder duplicateIndexesSB = new StringBuilder();
 						
 						for(int i = 0; i < duplicateVoteIndexes.length; i++){
 							if(duplicateVoteIndexes[i]){
-								duplicateIndexes.append("#" + (i + 1) + ", ");
+								duplicateIndexesSB.append("#" + (i + 1) + ", ");
 							}
 						}
-						duplicateIndexes.delete(duplicateIndexes.length() - 2, duplicateIndexes.length()); // cut away final ", "
+						duplicateIndexesSB.delete(duplicateIndexesSB.length() - 2, duplicateIndexesSB.length()); // cut away final ", "
 						
 						reply = String.format("duplicate votes detected - check votes at %s. %s", 
-								duplicateIndexes, defaultFeedback);
+								duplicateIndexesSB, defaultFeedback);
 					}
 					// more error handling?
 					// if everything is ok, move on to saving to file!
@@ -175,7 +177,7 @@ public class VoteBot extends ListenerAdapter{
 				    	StringBuilder cutMessage = new StringBuilder();
 				    	String[] voteArray = message.split(";+");
 				    	
-				    	for(int i = 0; i < (voteArray.length > 10? 10 : voteArray.length); i++){
+				    	for(int i = 0; i < (voteArray.length > MAX_LIST_LENGTH? MAX_LIST_LENGTH : voteArray.length); i++){
 				    		cutMessage.append(voteArray[i] + "; ");
 				    	}
 				    	
