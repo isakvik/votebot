@@ -147,7 +147,7 @@ public class VoteBot extends ListenerAdapter{
 						}
 						wrongIndexes = wrongIndexes.delete(wrongIndexes.length() - 2, wrongIndexes.length()); // cut away final ", "
 						
-						reply = String.format("user%s at %d %s not found in the top 50. vote discarded - %s", 
+						reply = String.format("user%s at %s %s not found in the top 50. vote discarded - %s", 
 								(count != 1 ? "s" : ""), wrongIndexes, (count != 1 ? "were" : "was"), defaultFeedback);
 					}
 					else if(votedForYourselfError){
