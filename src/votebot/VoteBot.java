@@ -190,7 +190,7 @@ public class VoteBot extends ListenerAdapter{
 								// register new vote
 						    	updateVoteList(sender + "/" + cutMessage + "\n");
 						    	
-						    	reply = "old vote discarded, new vote registered. old vote was " + vote.substring(vote.indexOf('/') + 1);
+						    	reply = "old vote discarded, new vote registered. old vote was: " + vote.substring(vote.indexOf('/') + 1);
 
 						    	break;
 						    }
@@ -198,13 +198,28 @@ public class VoteBot extends ListenerAdapter{
 
 						if(!hasVoted){
 							// register vote	
-					    	updateVoteList(sender + "/" + cutMessage);		
+					    	updateVoteList(sender + "/" + cutMessage);
 							reply = "vote registered, thank you";
 						}
 					}
 				}
 				else { // if ?vote parameter doesn't exist or is wrong
 					reply = "instructions for voting can be found in [" + threadURL + " the voting thread]. thanks for showing interest!";
+				}
+
+				//	send
+				event.respond("bot reply: " + reply);
+				log("to " + sender + ": <-GN> bot reply: " + reply);
+			}
+			else if (message.split(" ")[0].equalsIgnoreCase("?currentvote")) {
+				// replies with your current vote.
+				reply = "No vote with your name found.";
+				
+				for(String vote : votes) {
+				    if(vote.startsWith(sender)) {				    	
+				    	reply = "your current vote is: " + vote.substring(vote.indexOf('/') + 1);
+				    	break;
+				    }
 				}
 
 				//	send
