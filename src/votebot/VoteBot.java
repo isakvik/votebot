@@ -77,15 +77,16 @@ public class VoteBot extends ListenerAdapter{
 			String sender = event.getUser().getNick();
 			
 			String reply = "default message. if you see this -GN fucked up :(";
+			String defaultFeedback = "vote discarded - please follow instructions in [" + threadURL + " the voting thread] closely!";
 
 	    	// case for ?vote - only command we need for this nice bot
 			if (message.split(" ")[0].equalsIgnoreCase("?vote")) {
 				log("<" + sender + "> " + message);
 				
-				if(message.split(" ").length > 1 && message.split(";").length > 1){ // if ?vote has players parameter
+				if(message.split(" ").length > 1 && message.split(";+").length > 1){ // if ?vote has players parameter
 					
 					message = message.substring(6); // remove "?vote ", old .split(" ")[1] method didn't work out
-					String[] votedFor = message.toLowerCase().replace(' ', '_').split(";", 11);	// max limit of 11
+					String[] votedFor = message.toLowerCase().replace(' ', '_').split(";+", 11);	// max limit of 11
 					
 					//	cut away
 					if(votedFor.length == 11){
@@ -105,7 +106,7 @@ public class VoteBot extends ListenerAdapter{
 					////////////////////////////////////////////////////////////////// check for errors
 										
 					for(int i = 0; i < votedFor.length; i++){
-						if(i >= 10)
+						if(i >= 10 || votedFor[i].equals(""))
 							break;
 						
 						if(top50.contains(votedFor[i].trim()))
@@ -146,10 +147,11 @@ public class VoteBot extends ListenerAdapter{
 						}
 						wrongIndexes = wrongIndexes.delete(wrongIndexes.length() - 2, wrongIndexes.length()); // cut away final ", "
 						
-						reply = "user" + (count != 1 ? "s" : "") + " at " + wrongIndexes + (count != 1 ? " were" : " was") + " not found in the top 50. vote discarded - please follow instructions in [" + threadURL + " the voting thread] closely!";
+						reply = String.format("user%s at %d %s not found in the top 50. vote discarded - %s", 
+								(count != 1 ? "s" : ""), wrongIndexes, (count != 1 ? "were" : "was"), defaultFeedback);
 					}
 					else if(votedForYourselfError){
-						reply = "you put yourself at #" + (votedForYourselfIndex + 1) + ". vote discarded - please follow instructions in [" + threadURL + " the voting thread] closely!";
+						reply = "you put yourself at #" + (votedForYourselfIndex + 1) + ". " + defaultFeedback;
 					}
 					else if(duplicateVoteError){
 						// construct reply string containing indexes for duplicate users
@@ -160,9 +162,10 @@ public class VoteBot extends ListenerAdapter{
 								duplicateIndexes.append("#" + (i + 1) + ", ");
 							}
 						}
-						duplicateIndexes = duplicateIndexes.delete(duplicateIndexes.length() - 2, duplicateIndexes.length()); // cut away final ", "
+						duplicateIndexes.delete(duplicateIndexes.length() - 2, duplicateIndexes.length()); // cut away final ", "
 						
-						reply = "duplicate votes detected - check votes at " + duplicateIndexes + ". vote discarded - please follow instructions in [" + threadURL + " the voting thread] closely!";
+						reply = String.format("duplicate votes detected - check votes at %s. %s", 
+								duplicateIndexes, defaultFeedback);
 					}
 					// more error handling?
 					// if everything is ok, move on to saving to file!
@@ -170,7 +173,7 @@ public class VoteBot extends ListenerAdapter{
 						
 					    // first remove eventual excessive entries from original message
 				    	StringBuilder cutMessage = new StringBuilder();
-				    	String[] voteArray = message.split(";");
+				    	String[] voteArray = message.split(";+");
 				    	
 				    	for(int i = 0; i < (voteArray.length > 10? 10 : voteArray.length); i++){
 				    		cutMessage.append(voteArray[i] + "; ");
