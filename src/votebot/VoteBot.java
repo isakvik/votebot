@@ -87,7 +87,7 @@ public class VoteBot extends ListenerAdapter{
 				
 				if(message.split(" ").length > 1 && message.split(";+").length > 1){ // if ?vote has players parameter
 					
-					message = message.substring(6); // remove "?vote ", old .split(" ")[1] method didn't work out
+					message = message.substring(6) + ";"; // remove "?vote ", old .split(" ")[1] method didn't work out, add ";" because random newlines
 					String[] votedFor = message.toLowerCase().replace(' ', '_').split(";+", MAX_LIST_LENGTH + 1);
 					
 					//	cut away
@@ -178,7 +178,7 @@ public class VoteBot extends ListenerAdapter{
 				    	String[] voteArray = message.split(";+");
 				    	
 				    	for(int i = 0; i < (voteArray.length > MAX_LIST_LENGTH? MAX_LIST_LENGTH : voteArray.length); i++){
-				    		cutMessage.append(voteArray[i] + "; ");
+				    		cutMessage.append(voteArray[i].trim().replace(" ", "_") + "; ");	// replace spaces with underscores for less confusion with IRC names
 				    	}
 				    	
 						boolean hasVoted = false;
