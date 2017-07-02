@@ -1,17 +1,5 @@
 package votebot;
 
-import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-
-import org.pircbotx.Configuration;
-import org.pircbotx.PircBotX;
-import org.pircbotx.exception.IrcException;
-import org.pircbotx.hooks.ListenerAdapter;
-import org.pircbotx.hooks.events.ConnectEvent;
-import org.pircbotx.hooks.events.DisconnectEvent;
-import org.pircbotx.hooks.events.PrivateMessageEvent;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -20,6 +8,20 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Scanner;
+
+import org.pircbotx.Configuration;
+import org.pircbotx.Configuration.ServerEntry;
+import org.pircbotx.PircBotX;
+import org.pircbotx.exception.IrcException;
+import org.pircbotx.hooks.ListenerAdapter;
+import org.pircbotx.hooks.events.ConnectEvent;
+import org.pircbotx.hooks.events.DisconnectEvent;
+import org.pircbotx.hooks.events.PrivateMessageEvent;
+import org.pircbotx.hooks.events.SocketConnectEvent;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 
 public class VoteBot extends ListenerAdapter{
 	
@@ -87,8 +89,12 @@ public class VoteBot extends ListenerAdapter{
 				
 				if(message.split(" ").length > 1 && message.split(";+").length > 1){ // if ?vote has players parameter
 					
-					message = message.substring(6) + ";"; // remove "?vote ", old .split(" ")[1] method didn't work out, add ";" because random newlines
-					String[] votedFor = message.toLowerCase().replace(' ', '_').split(";+", MAX_LIST_LENGTH + 1);
+					message = message.substring(6); // remove "?vote ", old .split(" ")[1] method didn't work out, add ";" because random newlines
+					if(message.endsWith(";")){
+						message = message.substring(0, message.length() - 1);
+					}
+					
+					String[] votedFor = message.toLowerCase().split(";+", MAX_LIST_LENGTH);
 					
 					//	cut away
 					if(votedFor.length == MAX_LIST_LENGTH + 1){
@@ -108,6 +114,8 @@ public class VoteBot extends ListenerAdapter{
 					////////////////////////////////////////////////////////////////// check for errors
 										
 					for(int i = 0; i < votedFor.length; i++){
+						votedFor[i] = votedFor[i].trim();
+						
 						if(i >= MAX_LIST_LENGTH || votedFor[i].equals(""))
 							break;
 						
@@ -178,7 +186,7 @@ public class VoteBot extends ListenerAdapter{
 				    	String[] voteArray = message.split(";+");
 				    	
 				    	for(int i = 0; i < (voteArray.length > MAX_LIST_LENGTH? MAX_LIST_LENGTH : voteArray.length); i++){
-				    		cutMessage.append(voteArray[i].trim().replace(" ", "_") + "; ");	// replace spaces with underscores for less confusion with IRC names
+				    		cutMessage.append(voteArray[i].trim() + "; ");	// replace spaces with underscores for less confusion with IRC names
 				    	}
 				    	
 						boolean hasVoted = false;
@@ -257,9 +265,9 @@ public class VoteBot extends ListenerAdapter{
 		votesTxt = new File(votesPath);
 		votesTxt.createNewFile();
 		
-		// for some dumb fucking reason, probably related to peppy's fucking irc setup, any quit message throws a fucking nullpointerexception
+		// for some dumb reason, probably related to peppy's irc setup, any quit message throws a nullpointerexception
 		Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-		// so we make the logger shut the fuck up and rely on a helper method
+		// so we make the logger shut up and rely on a helper method
 		root.setLevel(Level.OFF);
 		
 		// current (static) top 50 list from file to array
@@ -283,8 +291,9 @@ public class VoteBot extends ListenerAdapter{
 		
 		@SuppressWarnings("resource")
 		PircBotX bot = new PircBotX(config);
+		ServerEntry server = config.getServers().get(0);
 		
-		log("connecting!");
+		log("connecting to " + server.getHostname() + "!");
 		bot.startBot();
 	}
 	
