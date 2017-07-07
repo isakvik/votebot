@@ -250,10 +250,10 @@ public class VoteBot extends ListenerAdapter{
 					for(String vote : votes) {
 					    if(vote.startsWith(sender)) {
 					    	if(votes.remove(vote)){
-					    		reply = "Vote successfully removed.";
+					    		reply = "vote successfully removed.";
 					    	}
 					    	else {
-					    		reply = "Could not remove vote.";
+					    		reply = "could not remove vote.";
 					    	}
 					    	updateVoteList();
 					    	break;
