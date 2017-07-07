@@ -201,7 +201,8 @@ public class VoteBot extends ListenerAdapter{
 								    votes.remove(vote);
 							    	
 									// register new vote
-							    	updateVoteList(sender + "/" + cutMessage + "\n");
+									votes.add(sender + "/" + cutMessage + "\n");
+							    	updateVoteList();
 							    	
 							    	reply = "old vote discarded, new vote registered. old vote was: " + vote.substring(vote.indexOf('/') + 1);
 	
@@ -211,7 +212,8 @@ public class VoteBot extends ListenerAdapter{
 	
 							if(!hasVoted){
 								// register vote	
-						    	updateVoteList(sender + "/" + cutMessage);
+								votes.add(sender + "/" + cutMessage + "\n");
+						    	updateVoteList();
 								reply = "vote registered, thank you";
 							}
 						}
@@ -253,6 +255,7 @@ public class VoteBot extends ListenerAdapter{
 					    	else {
 					    		reply = "Could not remove vote.";
 					    	}
+					    	updateVoteList();
 					    	break;
 					    }
 					}
@@ -323,10 +326,8 @@ public class VoteBot extends ListenerAdapter{
 		bot.startBot();
 	}
 	
-	// helper for adding/updating votes in file "votes.txt"
-	private static void updateVoteList(String newVote) throws IOException {
-		votes.add(newVote);
-		
+	// helper for updating votes in file "votes.txt"
+	private static void updateVoteList() throws IOException {
 		votesTxt.delete();
 		votesTxt = new File(votesPath);
 		votesTxt.createNewFile();
