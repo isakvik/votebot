@@ -83,161 +83,184 @@ public class VoteBot extends ListenerAdapter{
 			String reply = "default message. if you see this -GN fucked up :(";
 			String defaultFeedback = "vote discarded - please follow instructions in [" + threadURL + " the voting thread] closely!";
 
-	    	// case for ?vote - only command we need for this nice bot
-			if (message.split(" ")[0].equalsIgnoreCase("?vote")) {
-				log("<" + sender + "> " + message);
-				
-				if(message.split(" ").length > 1 && message.split(";+").length > 1){ // if ?vote has players parameter
+			switch(message.split(" ")[0].toLowerCase()){
+				case "?vote":
+					log("<" + sender + "> " + message);
 					
-					message = message.substring(6); // remove "?vote ", old .split(" ")[1] method didn't work out, add ";" because random newlines
-					if(message.endsWith(";")){
-						message = message.substring(0, message.length() - 1);
-					}
-					
-					String[] votedFor = message.toLowerCase().split(";+", MAX_LIST_LENGTH);
-					
-					//	cut away
-					if(votedFor.length == MAX_LIST_LENGTH + 1){
-						String[] tempArray = new String[MAX_LIST_LENGTH];
-						System.arraycopy(votedFor, 0, tempArray, 0, MAX_LIST_LENGTH);
+					if(message.split(" ").length > 1 && message.split(";+").length > 1){ // if ?vote has players parameter
 						
-						votedFor = tempArray;
-					}
-					
-					boolean notFoundError = false;
-					boolean[] foundInTop50Indexes = new boolean[votedFor.length]; // small note: defaults to false
-					boolean votedForYourselfError = false;
-					int votedForYourselfIndex = 0;
-					boolean duplicateVoteError = false;
-					boolean[] duplicateVoteIndexes = new boolean[votedFor.length];
-
-					////////////////////////////////////////////////////////////////// check for errors
-
-					for(int i = 0; i < votedFor.length; i++){
-						// remove all whitespace before any comparison is made. lazy fix
-						votedFor[i] = votedFor[i].trim();
-					}
-					
-					for(int i = 0; i < votedFor.length; i++){
-						if(i >= MAX_LIST_LENGTH || votedFor[i].equals(""))
-							break;
-						
-						if(top50.contains(votedFor[i].trim()))
-							foundInTop50Indexes[i] = true;
-						else
-							notFoundError = true;
-						
-						if(votedFor[i].equalsIgnoreCase(sender)){
-							votedForYourselfError = true;
-							votedForYourselfIndex = i;
+						message = message.substring(6); // remove "?vote ", old .split(" ")[1] method didn't work out, add ";" because random newlines
+						if(message.endsWith(";")){
+							message = message.substring(0, message.length() - 1);
 						}
 						
-						for(int j = i + 1; j < votedFor.length; j++){
-							if(j >= MAX_LIST_LENGTH)
-								continue;
+						String[] votedFor = message.toLowerCase().split(";+", MAX_LIST_LENGTH);
+						
+						//	cut away
+						if(votedFor.length == MAX_LIST_LENGTH + 1){
+							String[] tempArray = new String[MAX_LIST_LENGTH];
+							System.arraycopy(votedFor, 0, tempArray, 0, MAX_LIST_LENGTH);
 							
-							if(votedFor[i].equalsIgnoreCase(votedFor[j])){
-								duplicateVoteIndexes[i] = true;
-								duplicateVoteIndexes[j] = true;
-								duplicateVoteError = true;
+							votedFor = tempArray;
+						}
+						
+						boolean notFoundError = false;
+						boolean[] foundInTop50Indexes = new boolean[votedFor.length]; // small note: defaults to false
+						boolean votedForYourselfError = false;
+						int votedForYourselfIndex = 0;
+						boolean duplicateVoteError = false;
+						boolean[] duplicateVoteIndexes = new boolean[votedFor.length];
+	
+						////////////////////////////////////////////////////////////////// check for errors
+	
+						for(int i = 0; i < votedFor.length; i++){
+							// remove all whitespace before any comparison is made. lazy fix
+							votedFor[i] = votedFor[i].trim();
+						}
+						
+						for(int i = 0; i < votedFor.length; i++){
+							if(i >= MAX_LIST_LENGTH || votedFor[i].equals(""))
+								break;
+							
+							if(top50.contains(votedFor[i].trim()))
+								foundInTop50Indexes[i] = true;
+							else
+								notFoundError = true;
+							
+							if(votedFor[i].equalsIgnoreCase(sender)){
+								votedForYourselfError = true;
+								votedForYourselfIndex = i;
+							}
+							
+							for(int j = i + 1; j < votedFor.length; j++){
+								if(j >= MAX_LIST_LENGTH)
+									continue;
+								
+								if(votedFor[i].equalsIgnoreCase(votedFor[j])){
+									duplicateVoteIndexes[i] = true;
+									duplicateVoteIndexes[j] = true;
+									duplicateVoteError = true;
+								}
+							}
+						}
+	
+						////////////////////////////////////////////////////////////////// feedback reply construction
+						// done with priority first to last - only sends one reply at a time even if multiple things are wrong!
+						
+						if(notFoundError){
+							// construct reply string containing users that weren't found
+							int count = 0;
+							StringBuilder wrongIndexesSB = new StringBuilder();
+							
+							for(int i = 0; i < foundInTop50Indexes.length; i++){
+								if(!foundInTop50Indexes[i]){
+									wrongIndexesSB.append("#" + (i + 1) + ", ");
+									count++;
+								}
+							}
+							wrongIndexesSB = wrongIndexesSB.delete(wrongIndexesSB.length() - 2, wrongIndexesSB.length()); // cut away final ", "
+							
+							reply = String.format("user%s at %s %s not found in the top 50. %s", 
+									(count != 1 ? "s" : ""), wrongIndexesSB, (count != 1 ? "were" : "was"), defaultFeedback);
+						}
+						else if(votedForYourselfError){
+							reply = "you put yourself at #" + (votedForYourselfIndex + 1) + ". " + defaultFeedback;
+						}
+						else if(duplicateVoteError){
+							// construct reply string containing indexes for duplicate users
+							StringBuilder duplicateIndexesSB = new StringBuilder();
+							
+							for(int i = 0; i < duplicateVoteIndexes.length; i++){
+								if(duplicateVoteIndexes[i]){
+									duplicateIndexesSB.append("#" + (i + 1) + ", ");
+								}
+							}
+							duplicateIndexesSB.delete(duplicateIndexesSB.length() - 2, duplicateIndexesSB.length()); // cut away final ", "
+							
+							reply = String.format("duplicate votes detected - check votes at %s. %s", 
+									duplicateIndexesSB, defaultFeedback);
+						}
+						// more error handling?
+						// if everything is ok, move on to saving to file!
+						else {
+							
+						    // first remove eventual excessive entries from original message
+					    	StringBuilder cutMessage = new StringBuilder();
+					    	String[] voteArray = message.split(";+");
+					    	
+					    	for(int i = 0; i < (voteArray.length > MAX_LIST_LENGTH? MAX_LIST_LENGTH : voteArray.length); i++){
+					    		cutMessage.append(voteArray[i].trim() + "; ");	// replace spaces with underscores for less confusion with IRC names
+					    	}
+					    	
+							boolean hasVoted = false;
+							
+							for(String vote : votes) {
+							    if(vote.startsWith(sender)) {
+							    	// remove old vote
+							    	hasVoted = true;
+								    votes.remove(vote);
+							    	
+									// register new vote
+							    	updateVoteList(sender + "/" + cutMessage + "\n");
+							    	
+							    	reply = "old vote discarded, new vote registered. old vote was: " + vote.substring(vote.indexOf('/') + 1);
+	
+							    	break;
+							    }
+							}
+	
+							if(!hasVoted){
+								// register vote	
+						    	updateVoteList(sender + "/" + cutMessage);
+								reply = "vote registered, thank you";
 							}
 						}
 					}
-
-					////////////////////////////////////////////////////////////////// feedback reply construction
-					// done with priority first to last - only sends one reply at a time even if multiple things are wrong!
-					
-					if(notFoundError){
-						// construct reply string containing users that weren't found
-						int count = 0;
-						StringBuilder wrongIndexesSB = new StringBuilder();
-						
-						for(int i = 0; i < foundInTop50Indexes.length; i++){
-							if(!foundInTop50Indexes[i]){
-								wrongIndexesSB.append("#" + (i + 1) + ", ");
-								count++;
-							}
-						}
-						wrongIndexesSB = wrongIndexesSB.delete(wrongIndexesSB.length() - 2, wrongIndexesSB.length()); // cut away final ", "
-						
-						reply = String.format("user%s at %s %s not found in the top 50. %s", 
-								(count != 1 ? "s" : ""), wrongIndexesSB, (count != 1 ? "were" : "was"), defaultFeedback);
+					else { // if ?vote parameter doesn't exist or is wrong
+						reply = "instructions for voting can be found in [" + threadURL + " the voting thread]. thanks for showing interest!";
 					}
-					else if(votedForYourselfError){
-						reply = "you put yourself at #" + (votedForYourselfIndex + 1) + ". " + defaultFeedback;
-					}
-					else if(duplicateVoteError){
-						// construct reply string containing indexes for duplicate users
-						StringBuilder duplicateIndexesSB = new StringBuilder();
-						
-						for(int i = 0; i < duplicateVoteIndexes.length; i++){
-							if(duplicateVoteIndexes[i]){
-								duplicateIndexesSB.append("#" + (i + 1) + ", ");
-							}
-						}
-						duplicateIndexesSB.delete(duplicateIndexesSB.length() - 2, duplicateIndexesSB.length()); // cut away final ", "
-						
-						reply = String.format("duplicate votes detected - check votes at %s. %s", 
-								duplicateIndexesSB, defaultFeedback);
-					}
-					// more error handling?
-					// if everything is ok, move on to saving to file!
-					else {
-						
-					    // first remove eventual excessive entries from original message
-				    	StringBuilder cutMessage = new StringBuilder();
-				    	String[] voteArray = message.split(";+");
-				    	
-				    	for(int i = 0; i < (voteArray.length > MAX_LIST_LENGTH? MAX_LIST_LENGTH : voteArray.length); i++){
-				    		cutMessage.append(voteArray[i].trim() + "; ");	// replace spaces with underscores for less confusion with IRC names
-				    	}
-				    	
-						boolean hasVoted = false;
-						
-						for(String vote : votes) {
-						    if(vote.startsWith(sender)) {
-						    	// remove old vote
-						    	hasVoted = true;
-							    votes.remove(vote);
-						    	
-								// register new vote
-						    	updateVoteList(sender + "/" + cutMessage + "\n");
-						    	
-						    	reply = "old vote discarded, new vote registered. old vote was: " + vote.substring(vote.indexOf('/') + 1);
-
-						    	break;
-						    }
-						}
-
-						if(!hasVoted){
-							// register vote	
-					    	updateVoteList(sender + "/" + cutMessage);
-							reply = "vote registered, thank you";
-						}
-					}
-				}
-				else { // if ?vote parameter doesn't exist or is wrong
-					reply = "instructions for voting can be found in [" + threadURL + " the voting thread]. thanks for showing interest!";
-				}
-
-				//	send
-				event.respond("bot reply: " + reply);
-				log("to " + sender + ": <-GN> bot reply: " + reply);
-			}
-			else if (message.split(" ")[0].equalsIgnoreCase("?currentvote")) {
-				// replies with your current vote.
-				reply = "No vote with your name found.";
+	
+					//	send
+					event.respond("bot reply: " + reply);
+					log("to " + sender + ": <-GN> bot reply: " + reply);
+					break;
 				
-				for(String vote : votes) {
-				    if(vote.startsWith(sender)) {				    	
-				    	reply = "your current vote is: " + vote.substring(vote.indexOf('/') + 1);
-				    	break;
-				    }
-				}
+				case "?currentvote":
+					// replies with your current vote.
+					reply = "No vote with your name found.";
+					
+					for(String vote : votes) {
+					    if(vote.startsWith(sender)) {				    	
+					    	reply = "your current vote is: " + vote.substring(vote.indexOf('/') + 1);
+					    	break;
+					    }
+					}
 
-				//	send
-				event.respond("bot reply: " + reply);
-				log("to " + sender + ": <-GN> bot reply: " + reply);
+					//	send
+					event.respond("bot reply: " + reply);
+					log("to " + sender + ": <-GN> bot reply: " + reply);
+					break;
+					
+				case "?removevote":
+					// removes your current vote from the list.
+					reply = "No vote with your name found.";
+					
+					for(String vote : votes) {
+					    if(vote.startsWith(sender)) {
+					    	if(votes.remove(vote)){
+					    		reply = "Vote successfully removed.";
+					    	}
+					    	else {
+					    		reply = "Could not remove vote.";
+					    	}
+					    	break;
+					    }
+					}
+
+					//	send
+					event.respond("bot reply: " + reply);
+					log("to " + sender + ": <-GN> bot reply: " + reply);
+					break;
 			}
 
 			Thread.sleep(500); // flow control :^)
