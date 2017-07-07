@@ -112,10 +112,13 @@ public class VoteBot extends ListenerAdapter{
 					boolean[] duplicateVoteIndexes = new boolean[votedFor.length];
 
 					////////////////////////////////////////////////////////////////// check for errors
-										
+
 					for(int i = 0; i < votedFor.length; i++){
+						// remove all whitespace before any comparison is made. lazy fix
 						votedFor[i] = votedFor[i].trim();
-						
+					}
+					
+					for(int i = 0; i < votedFor.length; i++){
 						if(i >= MAX_LIST_LENGTH || votedFor[i].equals(""))
 							break;
 						
